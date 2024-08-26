@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SERVICE_NAME="wireguard"
+SERVICE_NAME="wireguard-monitoring"
 
 SCRIPT_PATH="/home/ubuntu/wireguard-python-monitoring/wireguard-monitoring.py"
 WORKING_DIR="/home/ubuntu/"
