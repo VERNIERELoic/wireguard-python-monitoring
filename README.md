@@ -34,7 +34,7 @@ Before you start, make sure you have the following installed:
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/yourusername/wireguard-monitoring.git
+   git clone https://github.com/VERNIERELoic/wireguard-python-monitoring.git
    cd wireguard-monitoring
    ```
 
