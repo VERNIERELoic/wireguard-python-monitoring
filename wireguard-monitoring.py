@@ -28,12 +28,16 @@ def parse_handshake_time(time_str):
         "minutes": 60,
         "hour": 3600,
         "hours": 3600,
+        "day": 86400,
+        "days": 86400,
+        "week": 604800,
+        "weeks": 604800,
     }
     total_seconds = 0
     parts = time_str.split(",")
     for part in parts:
         amount, unit = part.strip().split()[0], part.strip().split()[1]
-        total_seconds += int(amount) * units[unit]
+        total_seconds += int(amount) * units.get(unit, 0)  # Utilisation de get pour éviter les KeyError
     return total_seconds
 
 def parse_wg_show(output):
@@ -42,6 +46,7 @@ def parse_wg_show(output):
     
     peer_block = None
     for line in output.splitlines():
+        print(f"Parsing line: {line}")  # Debugging: Afficher chaque ligne avant de la traiter
         if line.startswith("peer:"):
             if peer_block:
                 peers_info.append(peer_block)
@@ -58,7 +63,7 @@ def parse_wg_show(output):
             rx, tx = re.findall(r'([\d\.]+ \w+)', line)
             peer_block["transfer_rx"] = parse_size(rx)
             peer_block["transfer_tx"] = parse_size(tx)
-    if peer_block:
+    if peer_block and "latest_handshake" in peer_block:  # Assurez-vous que le handshake est présent
         peers_info.append(peer_block)
 
     return peers_info
@@ -87,12 +92,13 @@ def monitor_wireguard(container_name, interval=30):
             current_peers = set()
             
             for peer in peers_info:
-                print(f"Peer: {peer['public_key']}, Handshake: {peer['latest_handshake']}, RX: {peer['transfer_rx']}, TX: {peer['transfer_tx']}")
-                connected_peers += 1
-                gauge_rx.labels(peer=peer['public_key']).set(peer['transfer_rx'])
-                gauge_tx.labels(peer=peer['public_key']).set(peer['transfer_tx'])
-                gauge_peer_ips.labels(peer=peer['public_key'], ip=peer['allowed_ips']).set(1)
-                current_peers.add((peer['public_key'], peer['allowed_ips']))
+                if 'latest_handshake' in peer:
+                    print(f"Peer: {peer['public_key']}, Handshake: {peer['latest_handshake']}, RX: {peer['transfer_rx']}, TX: {peer['transfer_tx']}")
+                    connected_peers += 1
+                    gauge_rx.labels(peer=peer['public_key']).set(peer['transfer_rx'])
+                    gauge_tx.labels(peer=peer['public_key']).set(peer['transfer_tx'])
+                    gauge_peer_ips.labels(peer=peer['public_key'], ip=peer['allowed_ips']).set(1)
+                    current_peers.add((peer['public_key'], peer['allowed_ips']))
             
             gauge_peers.set(connected_peers)  # Nombre de pairs connectés
             
